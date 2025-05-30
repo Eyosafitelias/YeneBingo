@@ -1,0 +1,189 @@
+{% extends "layouts/blank.html" %}
+{% load static %}
+{% load game_filters %}
+
+{% block content %}
+<span id="room-name" style="display:none;">"{{ room.room_name }}"</span>
+<span id="current-username" style="display:none;">"{{ currentUsername }}"</span>
+
+<div class="block w-full max-w-4xl mx-auto my-1 px-4 sm:px-8">
+    <div class="flex flex-col bg-gray-800 rounded-2xl shadow-2xl p-4 space-y-6">
+        <!-- Room Info -->
+        <div class="flex justify-between items-center text-white">
+            <div>
+                <h2 class="text-xl font-bold">Room: {{ room.room_name }}</h2>
+                <p class="text-sm text-gray-400">Stake: {{ room.stake }} birr</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-400">Players: {{ players.count }}</p>
+                <p id="game-status" class="text-sm text-emerald-400">Game in Progress</p>
+            </div>
+        </div>
+
+        <!-- Bingo Card -->
+        <div class="bg-gray-700 p-4 rounded-xl">
+            <h3 class="text-white text-lg font-semibold mb-4">Your Bingo Card</h3>
+            <div class="grid grid-cols-5 gap-2">
+                {% for letter, numbers in "BINGO"|zip_lists:player.card_numbers|slice:":25" %}
+                    <div class="bg-gray-600 text-white text-center py-2 rounded">{{ letter }}</div>
+                {% endfor %}
+            </div>
+            <div class="grid grid-cols-5 gap-2 mt-2">
+                {% for number in player.card_numbers %}
+                    <div class="bg-gray-600 text-white text-center py-2 rounded number-cell" data-number="{{ number }}">
+                        {{ number }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Called Numbers -->
+        <div class="bg-gray-700 p-4 rounded-xl">
+            <h3 class="text-white text-lg font-semibold mb-4">Called Numbers</h3>
+            <div id="called-numbers" class="flex flex-wrap gap-2">
+                {% for number in game.called_numbers %}
+                    <div class="bg-emerald-500 text-white px-3 py-1 rounded-full">{{ number }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Players List -->
+        <div class="bg-gray-700 p-4 rounded-xl">
+            <h3 class="text-white text-lg font-semibold mb-4">Players</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {% for p in players %}
+                    <div class="bg-gray-600 text-white p-2 rounded">
+                        <p class="text-sm">{{ p.user.username }}</p>
+                        <p class="text-xs text-emerald-400">Card {{ p.card_number }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-4 right-4 hidden">
+    <div class="toast-body px-4 py-2 rounded-lg shadow-lg"></div>
+</div>
+
+<script>
+    // WebSocket connection
+    const roomName = document.getElementById('room-name').textContent.replace(/"/g, '');
+    const currentUsername = document.getElementById('current-username').textContent.replace(/"/g, '');
+    const socket = new WebSocket(
+        'ws://' + window.location.host + '/ws/bingo/card-selection/' + roomName + '/'
+    );
+
+    // Sound effects
+    const numberSounds = {};
+    const soundEnabled = true;
+
+    // Preload number sounds
+    for (let i = 1; i <= 75; i++) {
+        numberSounds[i] = new Audio(`/static/sounds/numbers/${i}.mp3`);
+    }
+
+    // Play sound effect
+    function playSound(soundName) {
+        if (!soundEnabled) return;
+        
+        const sound = new Audio(`/static/sounds/${soundName}.mp3`);
+        sound.play().catch(e => console.error('Error playing sound:', e));
+    }
+
+    // Play number sound
+    function playNumberSound(number) {
+        if (!soundEnabled || !numberSounds[number]) return;
+        
+        numberSounds[number].play().catch(e => console.error('Error playing number sound:', e));
+    }
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log('Received WebSocket message:', data);
+        
+        switch(data.type) {
+            case 'number_called':
+                // Add the called number to the display
+                const calledNumbers = document.getElementById('called-numbers');
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'bg-emerald-500 text-white px-3 py-1 rounded-full';
+                numberDiv.textContent = data.display || data.number;
+                calledNumbers.appendChild(numberDiv);
+                
+                // Mark the number on the card if it exists
+                const numberCell = document.querySelector(`.number-cell[data-number="${data.number}"]`);
+                if (numberCell) {
+                    numberCell.classList.add('bg-emerald-500');
+                }
+
+                // Play sounds
+                if (soundEnabled) {
+                    playSound('number_called');
+                    playNumberSound(data.number);
+                }
+                break;
+
+            case 'game_state':
+                // Update game status
+                const gameStatus = document.getElementById('game-status');
+                if (data.status === 'ended') {
+                    gameStatus.textContent = 'Game Ended';
+                    gameStatus.classList.remove('text-emerald-400');
+                    gameStatus.classList.add('text-red-400');
+                    showToast('Game has ended!', false);
+                }
+                break;
+
+            case 'game_started':
+                showToast('Game started! Numbers will be called shortly...', true);
+                break;
+
+            case 'game_reset':
+                // Reset game state
+                const gameStatusReset = document.getElementById('game-status');
+                gameStatusReset.textContent = 'Waiting for Players';
+                gameStatusReset.classList.remove('text-red-400');
+                gameStatusReset.classList.add('text-emerald-400');
+                
+                // Clear called numbers
+                const calledNumbersContainer = document.getElementById('called-numbers');
+                calledNumbersContainer.innerHTML = '';
+                
+                // Reset card numbers
+                document.querySelectorAll('.number-cell').forEach(cell => {
+                    cell.classList.remove('bg-emerald-500');
+                });
+                
+                showToast(data.message || 'Game has been reset. Waiting for players...', true);
+                break;
+
+            case 'clear_called_numbers':
+                // Clear called numbers display
+                const calledNumbersDisplay = document.getElementById('called-numbers');
+                calledNumbersDisplay.innerHTML = '';
+                break;
+        }
+    };
+
+    socket.onclose = function(e) {
+        console.error('Socket closed unexpectedly');
+        showToast('Connection lost. Please refresh the page.', true);
+    };
+
+    // Toast notification
+    function showToast(message, isSuccess = true) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white ${
+            isSuccess ? 'bg-emerald-500' : 'bg-red-500'
+        }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,425 @@
+{% extends "layouts/blank.html" %}
+{% load static %}
+{% load game_filters %}
+
+{% block content %}
+{% include 'splashscreen.html' %}
+{% csrf_token %}
+<span id="room-name" style="display:none;">{{ room.room_name }}</span>
+<span id="current-username" style="display:none;">{{ currentUsername }}</span>
+
+<div class="h-screen flex flex-col bg-gray-800">
+    <!-- Info Row -->
+    <div class="bg-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-2 py-1">
+            <div class="grid grid-cols-4 gap-3">
+                <!-- Game Info -->
+                <div class="bg-gradient-to-br from-gray-200 to-gray-600 rounded-lg p-1 shadow-md">
+                    <div class="text-[10px] font-bold text-white uppercase leading-tight">Game</div>
+                    <div class="text-lg font-bold text-white leading-tight">{{ room.room_name }}</div>
+                </div>
+                <!-- Derash Info -->
+                <div class="bg-gradient-to-br from-gray-200 to-gray-600 rounded-lg p-1 shadow-md">
+                    <div class="text-[10px] font-bold text-white uppercase leading-tight">Derash</div>
+                    <div class="text-lg font-bold text-white leading-tight derash"></div>
+                </div>
+                <!-- Players Info -->
+                <div class="bg-gradient-to-br from-gray-200 to-gray-600 rounded-lg p-1 shadow-md">
+                    <div class="text-[10px] font-bold text-white uppercase leading-tight">Players</div>
+                    <div class="text-lg font-bold text-white leading-tight" id="player-count">0</div>
+                </div>
+                <!-- Bet Info -->
+                <div class="bg-gradient-to-br from-gray-200 to-gray-600 rounded-lg p-1 shadow-md">
+                    <div class="text-[10px] font-bold text-white uppercase leading-tight">Bet</div>
+                    <div class="text-lg font-bold text-white leading-tight">{{ room.stake }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bg-gray-800 rounded-xl p-3 shadow-lg flex flex-col justify-between h-full">
+        <!-- Numbers Grid -->
+            <div class="space-y-0.5 text-[10px]">  <!-- Smaller text -->
+                {% for letter, color in "BINGO"|get_bingo_colors %}
+                <div class="flex">
+                    <div class="font-bold text-white p-0.5 rounded w-5 h-5 flex items-center justify-center bingo-header" style="--bg-color: {{ color }};">
+                        {{ letter }}
+                    </div>
+                    {% for row in "123456789012345" %}
+                        {% with number=forloop.parentloop.counter|get_bingo_number:forloop.counter %}
+                        <div class="number-cell text-white p-0.5 border rounded cursor-pointer w-5 h-5 flex items-center justify-center {% if number in called_numbers %}bg-green-500{% endif %}"
+                            data-number="{{ number }}">
+                            {{ number }}
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+        <!-- Game Info and Card Section -->
+            <!-- Left Column: Game Info -->
+            <div class="flex flex-col h-full justify-between">
+                <!-- Top Row: Countdown + Current Call -->
+                <div class="flex w-full gap-2 mb-1">
+                    <!-- Countdown Timer -->
+                    <div class="bg-gray-900 rounded-xl p-1 shadow-lg w-[30%] flex flex-col justify-center">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-400 mb-1">Time Remaining</div>
+                            <div class="text-3 font-bold text-yellow-400" id="countdownValue">30 sec</div>
+                        </div>
+                    </div>
+        
+                    <!-- Current Call & Sound Toggle -->
+                    <div class="bg-gray-800 rounded-xl p-1 shadow-lg w-[70%] flex flex-col justify-center relative">
+                        <div class="text-center mb-1">
+                            <div class="text-xs font-semibold text-gray-600 mb-0.5">Current Call</div>
+                        </div>
+                        <div class="flex items-center justify-center gap-16 w-full">
+                            <!-- Bouncing Circle -->
+                            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-xl font-bold text-white animate-bounce">
+                                <span id="current-number">-</span>
+                            </div>
+                                    
+                            <!-- Sound Toggle Button -->
+                            <button id="sound-toggle"
+                                class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition"
+                                aria-label="Toggle Sound">
+                                <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                                <svg id="sound-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 hidden"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                        clip-rule="evenodd" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 14l2 2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Recent Calls -->
+                <div class="bg-gray-800 rounded-xl p-0.5 shadow-lg flex flex-col justify-center h-full">
+                    <div class="text-center mb-1">
+                        <div class="text-xs font-semibold text-gray-500 mb-1">Recent Calls</div>
+                        <div class="flex justify-center space-x-2" id="recent-calls">
+                            {% for i in "1234" %}
+                            <div class="bg-blue-500 rounded-full flex items-center justify-center text-sm font-semibold text-blue-800">-</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Right Column: Bingo Card -->
+            <div class="bg-gray-800 rounded-xl p-3 shadow-lg flex flex-col justify-between h-full">
+                <div class="text-center mb-2 flex-1 overflow-y-auto">
+                    <div class="grid grid-cols-5 gap-0.5">
+                        {% for letter, color in "BINGO"|get_bingo_colors %}
+                        <div class="text-center p-0.5 border rounded-lg cursor-pointer text-white font-bold bingo-letter" style="--bg-color: {{ color }};">
+                            {{ letter }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="grid grid-cols-5 gap-0.5">
+                        {% for row in bingo_card %}
+                            {% for number in row %}
+                                <div class="text-center border 
+                                    {% if number == '⭐️' %}bg-green-500 text-white{% else %}bg-gray-700 text-white{% endif %}
+                                    rounded-lg cursor-pointer card-cell transition-all duration-200"
+                                    data-number="{{ number }}" 
+                                    data-index="{{ forloop.counter0 }}"
+                                    onclick="handleCardClick(this)" >
+                                    
+                                    {% if number == '*' %}
+                                        ⭐️
+                                    {% else %}
+                                        {{ number }}
+                                    {% endif %}
+                                    
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-2 text-xs text-gray-600">
+                        Card {{ player.card_number }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer Buttons -->
+        <div class="mt-2 grid grid-cols-2 gap-2">
+            <button onclick="leaveGame()"
+                    class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-red-800 transition-colors duration-200">
+                Leave
+            </button>
+            <button onclick="declareBingo()"
+                    class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-800 transition-colors duration-200">
+                BINGO!
+            </button>
+        </div>
+</div>
+
+<style>
+    .bingo-header {
+        background-color: var(--bg-color);
+    }
+    .bingo-letter {
+        background-color: var(--bg-color);
+    }
+
+    /* Toast Animation */
+    @keyframes slideDown {
+        0% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        10% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        90% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+    }
+
+    .toast-show {
+        animation: slideDown 3s ease-in-out forwards;
+    }
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-3px); }
+        50% { transform: translateX(3px); }
+        75% { transform: translateX(-3px); }
+        100% { transform: translateX(0); }
+    }
+
+    .shake {
+    animation: shake 0.3s;
+    }
+
+    @keyframes pop {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+    }
+
+    .pop-animation {
+    animation: pop 1s ease-in-out infinite;
+    }
+
+</style>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-lg shadow-2xl opacity-0 transition-all duration-500 flex items-center space-x-3 z-50">
+    <div class="flex-shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+    </div>
+    <p id="toast-message" class="font-medium"></p>
+</div>
+<div id="gameEndModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+      <h2 class="text-xl font-bold mb-4 text-center text-green-700">🎉 Game Over!</h2>
+      <p id="winnerMessage" class="text-center mb-4 text-gray-700">Winner: ...</p>
+      <div id="winnerCardGrid" class="grid grid-cols-5 gap-1 justify-items-center mb-4"></div>
+      <div class="flex flex-col items-center mt-4">
+        <p class="text-sm text-gray-600 mb-1">Redirecting in</p>
+        <span id="countdownValue"
+              class="text-3xl font-bold text-blue-600 animate-pulse transition-transform duration-200 ease-out">
+          10
+        </span>
+      </div>
+      
+      <div class="flex justify-between gap-3">
+        <button id="playAgainBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
+          Play Again
+        </button>
+        <button id="leaveGameBtn" onclick="leaveGame()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg">
+          Leave Game
+        </button>
+      </div>
+    </div>
+  </div>
+  
+<!-- Game Over Modal 
+<div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-xl w-full max-w-md p-4 shadow-lg">
+      <div class="text-center mb-4">
+        <h2 id="gameOverTitle" class="text-2xl font-bold text-orange-500">BINGO!</h2>
+        <p id="whoWon" class="text-lg font-semibold text-green-700 mt-1">You Win!</p>
+        <p class="text-sm text-gray-600 mt-1">Bonus: <span id="bonusWinText" class="text-green-600">+25</span></p>
+        <p id="cardNumberModalFooter" class="text-xs text-gray-400 mt-1">Card 4</p>
+      </div>
+  
+      <div id="gameOverBingoHeader" class="flex justify-center gap-0 mb-3"></div>
+      <div id="gameOverBingoGrid" class="grid grid-cols-5 gap-0 mb-4"></div>
+  
+      <div class="text-center text-sm text-gray-500 mb-3">
+        Redirecting in <span id="redirect-timer">10</span> seconds...
+      </div>
+  
+      <div class="flex justify-between gap-3">
+        <button id="playAgainBtn" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
+          Play Again
+        </button>
+        <button id="leaveGameBtn" onclick="leaveGame()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg">
+          Leave Game
+        </button>
+      </div>
+    </div>
+  </div>-->
+
+<script src="{% static 'js/game/socket.js' %}"></script>
+
+<script>
+let gameOverTimeout = null;
+let redirectTimer = null;
+
+
+// Play again function
+function setupPlayAgainButton() {
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    if (!playAgainBtn) {
+        console.error('Play Again button not found');
+        return;
+    }
+
+    playAgainBtn.addEventListener('click', async function() {
+        const roomName = document.getElementById('room-name')?.textContent.replace(/"/g, '').trim();
+        if (!roomName) {
+            console.error('Room name not found');
+            showToast('Error: Could not determine room name', true);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/bingo/join-room/${roomName}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = data.redirect;
+                return; // Exit early on success
+            } else {
+                showToast(data.message || 'Error joining room', true);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('An error occurred while joining the room', true);
+        }
+
+        const modal = document.getElementById('game-over-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+
+        // Re-enable BINGO button
+        const bingoButton = document.querySelector('button[onclick="declareBingo()"]');
+        if (bingoButton) {
+            bingoButton.disabled = false;
+            bingoButton.innerHTML = 'BINGO!';
+        }
+    });
+}
+
+// Call this function when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    setupPlayAgainButton();
+});
+
+// Also try to set up the button if the DOM is already loaded
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(setupPlayAgainButton, 0);
+}
+// Function to handle leaving the game
+function leaveGame() {
+    // Close WebSocket connection if it exists
+    if (typeof socket !== 'undefined' && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+    
+    // Redirect to home page
+    window.location.href = '/';
+}
+
+function handleCardClick(cell) {
+    console.log('Clicked cell:', cell);
+    if (!gameActive) {
+        console.log('Game is not active.');
+        return;
+    }
+
+    const currentCardNumber = document.querySelector('.bg-emerald-500')?.textContent.replace('Card ', '').trim();
+    const playerCardNumber = '{{ player.card_number }}';
+
+    //if (currentCardNumber !== playerCardNumber) {
+    //    console.log('Not your card.');
+    //    return;
+    //}
+
+    const raw = cell.dataset.number;
+    const number = raw === '*' ? '*' : parseInt(raw);
+    console.log('Clicked number:', number);
+
+    if (number === '*' || calledNumbers.includes(number)) {
+        cell.classList.toggle('bg-green-500');
+    } else {
+        console.log('Number not called yet.');
+        cell.classList.add('shake');
+        setTimeout(() => cell.classList.remove('shake'), 500);
+    }
+}
+
+let countdown = 10;
+
+countdownEl.textContent = countdown;
+
+const colors = ['text-red-500', 'text-yellow-500', 'text-green-500', 'text-blue-500', 'text-purple-500'];
+
+const roomName = document.getElementById('room-name')?.textContent?.replace(/"/g, '');
+const countdownInterval = setInterval(() => {
+    countdown--;
+    countdownEl.textContent = countdown;
+
+    // Animate color flash
+    countdownEl.classList.remove(...colors);
+    countdownEl.classList.add(colors[countdown % colors.length]);
+
+    // Add brief scale animation
+    countdownEl.classList.add('scale-125');
+    setTimeout(() => countdownEl.classList.remove('scale-125'), 200);
+
+    if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        window.location.href = `/bingo/card-selection/${roomName}/`;
+    }
+}, 1000);
+
+
+</script>
+
+
+{% endblock %}

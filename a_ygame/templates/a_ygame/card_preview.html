@@ -1,0 +1,23 @@
+{% load static %}
+
+<div class="w-full h-full flex items-center justify-center p-1">
+    <div class="w-full max-w-[120px] h-[120px] overflow-hidden bingo-card">
+        <!-- Bingo Grid -->
+        <div class="grid grid-rows-5 gap-0.5 bg-gray-900 p-0.5 rounded shadow-sm h-full">
+            {% for row in card_numbers %}
+            <div class="grid grid-cols-5 gap-0.5 h-full">
+                {% for number in row %}
+                <div class="flex items-center justify-center text-[10px] font-bold rounded-sm h-full
+                    {% if number == '*' %}
+                        bg-green-800 text-white
+                    {% else %}
+                        bg-gray-700 text-white
+                    {% endif %}">
+                    {{ number }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

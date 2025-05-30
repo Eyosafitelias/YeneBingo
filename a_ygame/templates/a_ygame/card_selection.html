@@ -1,0 +1,162 @@
+{% extends "layouts/blank.html" %}
+{% load static %}
+
+{% block content %}
+{% include 'splashscreen.html' %}
+{% csrf_token %}
+<span id="room-name" style="display:none;">{{ room.room_name }}</span>
+<span id="current-username" style="display:none;">{{ currentUsername }}</span>
+
+<div class="flex flex-col bg-gray-800 shadow-2xl p-2 space-y-6">
+        
+        <!-- Titles/Header Row -->
+        <div class="w-full max-w-4xl mx-auto px-2 sm:px-8 mt-4 flex justify-between items-center gap-2">
+            <!-- Back Button (Shrinks on mobile) -->
+            <a href="{% url 'home' %}" class="shrink-0 inline-flex items-center text-white bg-gray-700 hover:bg-gray-600 rounded-full px-3 py-2 transition shadow">
+                <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                <span class="hidden sm:inline">Back</span>
+            </a>
+
+            <!-- Countdown (Adjusts spacing) -->
+            <div class="text-white flex items-center space-x-2 sm:space-x-4 bg-gray-700 px-3 sm:px-4 py-2 rounded-full shadow min-w-0">
+                <span class="font-semibold truncate">Game Start in </span>
+                <span id="countdownValue" class="shrink-0 bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2 sm:px-3 py-1 rounded-full">30</span>
+            </div>
+
+            <!-- Username and Balance (Truncates long usernames) -->
+            <div class="text-white flex items-center space-x-2 sm:space-x-4 bg-gray-700 px-3 sm:px-4 py-2 rounded-full shadow min-w-0">
+                <span class="font-semibold truncate max-w-[80px] sm:max-w-none">{{ request.user.username }}</span>
+                <span class="shrink-0 bg-emerald-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full">{{ balance|floatformat:0 }} ETB</span>
+            </div>
+        </div>
+
+        <!-- Card Selection Grid -->
+        <div class="grid grid-cols-10 gap-2">
+            {% for card in available_cards %}
+                <button
+                    class="card-button bg-emerald-500 hover:bg-emerald-600 text-white rounded transition-colors duration-200 flex items-center justify-center"
+                    data-card-number="{{ card.number }}"
+                >
+                    {{ card.number }}
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- Preview Section -->
+        <div id="previewContainer" class="flex justify-center items-center bg-gray-700 text-white h-32 rounded-xl mt-4">
+            <div class="text-center">
+                <i class="fas fa-dice-d20 text-3xl mb-2 text-emerald-400"></i>
+                <p id="previewText" class="text-sm text-gray-300">Select a card to preview</p>
+            </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="flex justify-between items-center bg-gray-900 rounded-xl p-4 mt-4">
+            <button 
+                class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-xl flex items-center gap-2"
+                id="refresh-button"
+            >
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+
+            <div class="text-center">
+                <div id="selectedCardDisplay" class="text-2xl font-bold text-emerald-400">0</div>
+                <div class="text-sm text-gray-300">Selected Card</div>
+            </div>
+
+            <button 
+                class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-xl flex items-center gap-2"
+                id="start-button"
+            >
+                <i class="fas fa-play"></i> Play
+            </button>
+        </div>
+
+    </div>
+
+<style>
+    .bingo-header {
+        background-color: var(--bg-color);
+    }
+    .bingo-letter {
+        background-color: var(--bg-color);
+    }
+
+    /* Toast Animation */
+    @keyframes slideDown {
+        0% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        10% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        90% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+    }
+
+    .toast-show {
+        animation: slideDown 3s ease-in-out forwards;
+    }
+</style>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-lg shadow-2xl opacity-0 transition-all duration-500 flex items-center space-x-3 z-50">
+    <div class="flex-shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+    </div>
+    <p id="toast-message" class="font-medium"></p>
+</div>
+<script>
+    // Function to handle leaving the game
+function goback() {
+    // Close WebSocket connection if it exists
+    if (typeof socket !== 'undefined' && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+    
+    // Redirect to home page
+    window.location.href = '/bingo/';
+}
+</script>
+
+<style>
+    /* Toast Animation */
+    @keyframes slideDown {
+        0% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        10% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        90% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+    }
+
+    .show {
+        animation: slideDown 3s ease-in-out forwards;
+    }
+</style>
+
+<script src="{% static 'js/game/card_selection_socket.js' %}"></script>
+
+{% endblock %}

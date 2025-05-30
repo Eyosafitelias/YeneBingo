@@ -1,0 +1,111 @@
+{% extends "layouts/blank.html" %}
+
+{% block content %}
+{% include 'splashscreen.html' %}
+    <div class="flex flex-col bg-gray-800 shadow-2xl p-4 space-y-4">
+        <!-- Titles/Header Row -->
+        <div class="w-full max-w-4xl mx-auto px-2 sm:px-8 mt-4 flex justify-between items-center gap-2">
+            <!-- Back Button (Shrinks on mobile) -->
+            <a href="{% url 'home' %}" class="shrink-0 inline-flex items-center text-white bg-gray-700 hover:bg-gray-600 rounded-full px-3 py-2 transition shadow">
+                <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                <span class="hidden sm:inline">Back</span>
+            </a>
+            <!-- Username and Balance (Truncates long usernames) -->
+            <div class="text-white flex items-center space-x-2 sm:space-x-4 bg-gray-700 px-3 sm:px-4 py-2 rounded-full shadow min-w-0">
+                <span class="font-semibold truncate max-w-[80px] sm:max-w-none">{{ request.user.username }}</span>
+                <span class="shrink-0 bg-emerald-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full">{{ balance|floatformat:0 }} ETB</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 text-white text-sm font-semibold px-4 py-2 border-b border-gray-600">
+            <div>Stake</div>
+            <div>Players</div>
+            <div>Win</div>
+            <div class="text-right">Join</div>
+        </div>
+
+        <!-- Room List -->
+        <div id="game_rooms" class="flex flex-col space-y-2">
+            <!-- Room Items (repeat as needed) -->
+             {% for room in rooms %}
+            <div class="grid grid-cols-4 items-center bg-gray-700 text-white px-4 py-3 rounded-xl shadow">
+                <div class="text-emerald-400">{{ room.stake }} birr</div>
+                <div>{{ room.players.count }}</div>
+                <div class="text-yellow-400">Up to </div>
+                <div class="text-right">
+                    <button class="join-room bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1 rounded-xl" data-room="{{ room.room_name }}">Join</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-4 right-4 hidden">
+    <div class="toast-body px-4 py-2 rounded-lg shadow-lg"></div>
+</div>
+
+<script>
+    document.querySelectorAll('.join-room').forEach(button => {
+        button.addEventListener('click', async function() {
+            const roomName = this.dataset.room;
+            try {
+                const response = await fetch(`/bingo/join-room/${roomName}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    showToast(data.message || 'Error joining room', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred while joining the room', true);
+            }
+        });
+    });
+
+    function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        const toastBody = toast.querySelector('.toast-body');
+        toastBody.textContent = message;
+        toast.classList.remove('hidden');
+        toast.classList.remove('bg-red-100', 'text-red-700');
+        toast.classList.remove('bg-green-100', 'text-green-700');
+        
+        if (isError) {
+            toast.classList.add('bg-red-100', 'text-red-700');
+        } else {
+            toast.classList.add('bg-green-100', 'text-green-700');
+        }
+        
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
+function goback() {
+    // Close WebSocket connection if it exists
+    if (typeof socket !== 'undefined' && socket.readyState === WebSocket.OPEN) {
+        socket.close();
+    }
+    
+    // Redirect to home page
+    window.location.href = '/';
+}
+</script>
+
+</script>
+{% endblock %}

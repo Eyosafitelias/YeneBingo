@@ -1,0 +1,330 @@
+{% extends "layouts/blank.html" %}
+{% load static %}
+{% block content %}
+{% include 'splashscreen.html' %}
+
+<div class="flex flex-col min-h-screen bg-gray-800 p-4">
+    <!-- Header with back button and balance -->
+    <div class="w-full max-w-4xl mx-auto px-2 sm:px-8 mt-4 flex justify-between items-center gap-2">
+        <!-- Back Button -->
+        <a href="{% url 'home' %}" class="shrink-0 inline-flex items-center text-white bg-gray-700 hover:bg-gray-600 rounded-full px-3 py-2 transition shadow">
+            <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="hidden sm:inline">Back</span>
+        </a>
+        
+        <!-- Username and Balance -->
+        <div class="text-white flex items-center space-x-2 sm:space-x-4 bg-gray-700 px-3 sm:px-4 py-2 rounded-full shadow min-w-0">
+            <span class="font-semibold truncate max-w-[80px] sm:max-w-none">{{ request.user.username }}</span>
+            <span class="shrink-0 bg-emerald-500 text-white text-xs font-semibold px-2 sm:px-3 py-1 rounded-full">{{ request.user.profile.balance|floatformat:2 }} ETB</span>
+        </div>
+    </div>
+
+    <!-- Main form -->
+    <div class="max-w-md mx-auto w-full mt-6 bg-gray-700 rounded-xl shadow-lg overflow-hidden">
+        <!-- Card Header -->
+        <div class="px-6 py-4 border-b border-gray-600">
+            <h3 class="text-xl font-bold text-white text-center">Withdraw Funds</h3>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="px-6 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="p-3 rounded text-sm font-medium 
+                {% if message.tags == 'success' %}bg-green-900 text-green-100
+                {% elif message.tags == 'error' %}bg-red-900 text-red-100
+                {% else %}bg-blue-900 text-blue-100{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Withdrawal Form -->
+        <form method="POST" class="p-6 space-y-4" id="withdrawalForm">
+            {% csrf_token %}
+            
+            <!-- Amount -->
+            <div>
+                <label for="amount" class="block text-sm font-medium text-gray-300 mb-1">Amount (ETB)</label>
+                <input 
+                    type="number" 
+                    id="amount" 
+                    name="amount" 
+                    step="0.01" 
+                    min="50" 
+                    required
+                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Minimum 50 ETB"
+                >
+                <p class="mt-1 text-xs text-gray-400">
+                    Available balance: {{ request.user.profile.balance|floatformat:2 }} ETB
+                </p>
+            </div>
+
+            <!-- Bank Selection -->
+            <div>
+                <label for="bank_code" class="block text-sm font-medium text-gray-300 mb-1">Bank</label>
+                <select 
+                    id="bank_code" 
+                    name="bank_code" 
+                    required
+                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="" disabled selected>Select your bank</option>
+                    <option value="001">Commercial Bank of Ethiopia</option>
+                    <option value="002">Awash Bank</option>
+                    <option value="003">Dashen Bank</option>
+                    <option value="004">Bank of Abyssinia</option>
+                    <option value="005">Zemen Bank</option>
+                    <option value="006">NIB International Bank</option>
+                    <option value="007">Hibret Bank</option>
+                </select>
+            </div>
+
+            <!-- Account Number -->
+            <div>
+                <label for="account_number" class="block text-sm font-medium text-gray-300 mb-1">Account Number</label>
+                <input 
+                    type="text" 
+                    id="account_number" 
+                    name="account_number" 
+                    required
+                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your account number"
+                >
+            </div>
+
+            <!-- Account Name -->
+            <div>
+                <label for="account_name" class="block text-sm font-medium text-gray-300 mb-1">
+                    Bank Account Full Name
+                </label>
+                <input 
+                    type="text" 
+                    id="account_name" 
+                    name="account_name" 
+                    required
+                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Exactly as it appears on your bank account"
+                    value="{{ request.user.get_full_name|default:'' }}"
+                >
+                <p class="mt-1 text-xs text-gray-400">
+                    Must match exactly with your bank account records
+                </p>
+            </div>
+
+            <!-- Single Withdraw Button -->
+            <div class="pt-2">
+                <button type="button" id="withdrawButton" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition">
+                    Withdraw
+                </button>
+            </div>
+        </form>
+
+        <!-- Info Box -->
+        <div class="px-6 pb-6">
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
+                <h4 class="text-sm font-medium text-gray-300 mb-2">Withdrawal Information</h4>
+                <ul class="text-xs text-gray-400 space-y-1">
+                    <li class="flex items-start">
+                        <svg class="h-3 w-3 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Minimum withdrawal: 50 ETB
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="h-3 w-3 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Processing time: 1-3 business days
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="h-3 w-3 text-blue-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Ensure all details match your bank records
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-gray-800 rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-600">
+            <h3 class="text-xl font-bold text-white text-center">Confirm Withdrawal</h3>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <div class="text-sm text-gray-300 space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Amount:</span>
+                    <span class="font-medium" id="modalConfirmAmount"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Bank:</span>
+                    <span id="modalConfirmBank"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Account Number:</span>
+                    <span class="font-mono" id="modalConfirmAccountNumber"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Account Name:</span>
+                    <span id="modalConfirmAccountName"></span>
+                </div>
+            </div>
+            
+            <!-- Confirmation Checkbox -->
+            <div class="flex items-start mt-4">
+                <input type="checkbox" id="modalConfirmDetails"
+                       class="mt-1 mr-2 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500">
+                <label for="modalConfirmDetails" class="font-bold text-white">
+                    I confirm all bank details are correct
+                </label>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 pt-4">
+                <button type="button" id="modalCancelButton" 
+                        class="flex-1 bg-gray-600 hover:bg-gray-500 text-white text-sm py-2 px-4 rounded-lg transition">
+                    Cancel
+                </button>
+                <button type="button" id="modalConfirmButton" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg transition">
+                    Confirm Withdrawal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-lg shadow-2xl opacity-0 transition-all duration-500 flex items-center space-x-3 z-50">
+    <div class="flex-shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+    </div>
+    <p id="toast-message" class="font-medium"></p>
+</div>
+<style>
+    /* Toast Animation */
+    @keyframes slideDown {
+        0% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+        10% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        90% {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+    }
+
+    .show {
+        animation: slideDown 3s ease-in-out forwards;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('withdrawalForm');
+    const withdrawBtn = document.getElementById('withdrawButton');
+    const modal = document.getElementById('confirmationModal');
+    const cancelBtn = document.getElementById('modalCancelButton');
+    const confirmBtn = document.getElementById('modalConfirmButton');
+    const bankSelect = document.getElementById('bank_code');
+    
+    // Withdraw button handler - shows modal
+    withdrawBtn.addEventListener('click', function() {
+        const amount = document.getElementById('amount').value;
+        const accountNumber = document.getElementById('account_number').value;
+        const accountName = document.getElementById('account_name').value;
+        const bankText = bankSelect.options[bankSelect.selectedIndex].text;
+        
+        // Validate fields
+        if (!amount || !accountNumber || !accountName || bankSelect.selectedIndex === 0) {
+            showToast('Please fill all fields before proceeding');
+            return;
+        }
+        
+        // Update modal content
+        document.getElementById('modalConfirmAmount').textContent = amount + ' ETB';
+        document.getElementById('modalConfirmBank').textContent = bankText;
+        document.getElementById('modalConfirmAccountNumber').textContent = accountNumber;
+        document.getElementById('modalConfirmAccountName').textContent = accountName;
+        
+        // Show modal
+        modal.classList.remove('hidden');
+    });
+    
+    // Cancel button handler
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+    
+    // Confirm button handler
+    confirmBtn.addEventListener('click', function() {
+        if (!document.getElementById('modalConfirmDetails').checked) {
+            showToast('Please confirm the details are correct');
+            return;
+        }
+        
+        // Submit the form
+        form.submit();
+    });
+    
+    // Client-side validation on form submit
+    form.addEventListener('submit', function(e) {
+        const amount = parseFloat(document.getElementById('amount').value);
+        const balance = parseFloat("{{ request.user.profile.balance|default:0 }}");
+        
+        if (amount < 50) {
+            e.preventDefault();
+            showToast('Minimum withdrawal amount is 50 ETB');
+            return false;
+        }
+        
+        if (amount > balance) {
+            e.preventDefault();
+            showToast('Insufficient balance for this withdrawal');
+            return false;
+        }
+    });
+});
+// Toast notification
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    toastMessage.textContent = message;
+    
+    // Remove any existing animation classes
+    toast.classList.remove('show');
+    
+    // Force a reflow
+    void toast.offsetWidth;
+    
+    // Add the animation class
+    toast.classList.add('show');
+    
+    // Remove the animation class after it completes
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+</script>
+
+{% endblock %}

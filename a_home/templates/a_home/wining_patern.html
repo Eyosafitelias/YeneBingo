@@ -1,0 +1,108 @@
+{% extends 'layouts/blank.html' %}
+{% load static %}
+
+{% block content %}
+  {% include 'splashscreen.html' %}
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <!-- Back Button -->
+  <div class="w-full max-w-2xl mx-auto px-4 sm:px-8 mt-4">
+    <a href="{% url 'home' %}" class="inline-flex items-center text-white bg-gray-700 hover:bg-gray-600 rounded-full px-4 py-2 transition shadow">
+      <!-- Left arrow icon -->
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+           xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Back
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="block w-full max-w-2xl mx-auto my-4 px-4 sm:px-8">
+    <div class="grid grid-cols-1 gap-3">
+
+      <!-- Description Box -->
+      <div class="flex items-center justify-between text-white rounded-xl shadow transition p-4">
+        <span class="text-base font-semibold">
+          Winning Patterns — as soon as you match one of these patterns, you can hit the Bingo button.
+        </span>
+      </div>
+
+      <!-- Image Box -->
+      <div x-data>
+      <div class="justify-between text-white rounded-xl shadow transition p-4">
+        <!-- Row 1: Four Corners, Horizontal Line, Vertical Line -->
+        <div class="flex flex-wrap justify-center gap-1">
+          
+          <!-- Four Corners -->
+          <div class="text-center">
+            <h2 class="text-sm">Four Corners</h2>
+            <div class="grid grid-cols-5 gap-0.5 border border-black w-fit">
+              <template x-for="(row, i) in 5" :key="i">
+                <template x-for="(col, j) in 5" :key="j">
+                  <div :class="(i === 0 && j === 0) || (i === 0 && j === 4) || (i === 4 && j === 0) || (i === 4 && j === 4) ? 'bg-green-500' : 'bg-white' " class="w-6 h-6 border border-gray-400"></div>
+                </template>
+              </template>
+            </div>
+          </div>
+      
+          <!-- Horizontal Line -->
+          <div class="text-center">
+            <h2 class="text-sm">Horizontal Line</h2>
+            <div class="grid grid-cols-5 gap-0.5 border border-black w-fit">
+              <template x-for="(row, i) in 5" :key="i">
+                <template x-for="(col, j) in 5" :key="j">
+                  <div :class="i === 1 ? 'bg-green-500' : 'bg-white'" class="w-6 h-6 border border-gray-400"></div>
+                </template>
+              </template>
+            </div>
+          </div>
+      
+          <!-- Vertical Line -->
+          <div class="text-center">
+            <h2 class="text-sm">Vertical Line</h2>
+            <div class="grid grid-cols-5 gap-0.5 border border-black w-fit">
+              <template x-for="(row, i) in 5" :key="i">
+                <template x-for="(col, j) in 5" :key="j">
+                  <div :class="j === 2 ? 'bg-green-500' : 'bg-white'" class="w-6 h-6 border border-gray-400"></div>
+                </template>
+              </template>
+            </div>
+          </div>
+        </div>
+      
+        <!-- Row 2: Diagonals -->
+        <div class="flex flex-wrap justify-center gap-1">
+          
+          <!-- Diagonal (\) -->
+          <div class="text-center">
+            <h2 class="text-sm">Diagonal (\)</h2>
+            <div class="grid grid-cols-5 gap-0.5 border border-black w-fit">
+              <template x-for="(row, i) in 5" :key="i">
+                <template x-for="(col, j) in 5" :key="j">
+                  <div :class="i === j ? 'bg-green-500' : 'bg-white'" class="w-6 h-6 border border-gray-400"></div>
+                </template>
+              </template>
+            </div>
+          </div>
+      
+          <!-- Diagonal (/) -->
+          <div class="text-center">
+            <h2 class="text-sm">Diagonal (/)</h2>
+            <div class="grid grid-cols-5 gap-0.5 border border-black w-fit">
+              <template x-for="(row, i) in 5" :key="i">
+                <template x-for="(col, j) in 5" :key="j">
+                  <div :class="i + j === 4 ? 'bg-green-500' : 'bg-white'" class="w-6 h-6 border border-gray-400"></div>
+                </template>
+              </template>
+            </div>
+          </div>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+{% endblock %}

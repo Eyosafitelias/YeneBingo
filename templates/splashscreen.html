@@ -1,0 +1,89 @@
+{% load static %}
+{% block content %}
+<div id="splash" class="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-gray-700 px-4 py-6">
+
+  <!-- Title -->
+  <div class="text-4xl sm:text-5xl font-extrabold text-purple-900 mb-6 text-center drop-shadow-[0_0_5px_#1e90ff]">
+    Waliya Bingo!
+  </div>
+
+  <!-- BINGO Balls -->
+  <div class="flex gap-4 justify-center items-center mb-10">
+    <div class="bingo-ball animate-wave delay-0">B</div>
+    <div class="bingo-ball animate-wave delay-[100ms]">I</div>
+    <div class="bingo-ball animate-wave delay-[200ms]">N</div>
+    <div class="bingo-ball animate-wave delay-[300ms]">G</div>
+    <div class="bingo-ball animate-wave delay-[400ms]">O</div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="w-full max-w-md absolute bottom-20 px-6">
+    <div class="h-2 bg-gray-300 rounded-full overflow-hidden">
+      <div class="w-full h-full bg-blue-500 animate-pulse"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="absolute bottom-6 text-sm text-gray-100 text-center drop-shadow-[0_0_5px_#1e90ff]">
+    &copy; 2025 Waliya Bingo! All rights reserved.
+  </div>
+</div>
+<style>
+  .bingo-ball {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #00f3df 10%, #e100ff 80%);
+  /* Simulated 3D shading */
+  color: rgb(5, 5, 5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3); /* Soft shadow for depth */
+  position: relative;
+  perspective: 500px; /* Adds depth */
+}
+
+.bingo-ball::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 25%;
+  width: 25px;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  filter: blur(5px);
+  z-index: 1;
+}
+
+/* Custom animation to make wave-like motion */
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0) rotateX(5deg) rotateY(5deg);
+  }
+  50% {
+    transform: translateY(-20px) rotateX(-5deg) rotateY(-5deg);
+  }
+}
+
+.animate-wave {
+  animation: wave 1.8s ease-in-out infinite;
+}
+
+.delay-0 { animation-delay: 0ms; }
+.delay-\[100ms\] { animation-delay: 100ms; }
+.delay-\[200ms\] { animation-delay: 200ms; }
+.delay-\[300ms\] { animation-delay: 300ms; }
+.delay-\[400ms\] { animation-delay: 400ms; }
+
+</style>
+<!-- JS Logic -->
+<script>
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+  }, 2500);
+</script>
+{% endblock %}

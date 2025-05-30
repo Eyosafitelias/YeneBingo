@@ -1,0 +1,162 @@
+body {
+background-color: #1f2937; /* Tailwind gray-800 */
+color: white;
+font-family: sans-serif;
+}
+
+.page-container {
+width: 100%;
+max-width: 640px;
+margin: auto;
+padding: 0.5rem 2rem;
+}
+
+.box {
+background-color: #1f2937;
+border-radius: 1rem;
+box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+padding: 0.5rem;
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+}
+
+.back-button {
+background-color: #ef4444;
+color: white;
+height: 2.5rem;
+padding: 0.25rem 1.5rem;
+border-radius: 0.75rem;
+display: flex;
+align-items: center;
+}
+
+.back-button:hover {
+background-color: #dc2626;
+}
+
+.countdown-box {
+background-color: #111827;
+padding: 0.5rem 1rem;
+border-radius: 0.75rem;
+text-align: center;
+box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.card-grid {
+display: grid;
+grid-template-columns: repeat(10, 1fr);
+gap: 0.25rem;
+}
+
+.card-button {
+background-color: #10b981;
+color: white;
+font-weight: bold;
+padding: 0.5rem;
+border-radius: 0.5rem;
+display: flex;
+justify-content: center;
+align-items: center;
+transition: background-color 0.2s;
+}
+
+.card-button:hover {
+background-color: #059669;
+}
+
+.preview-box {
+height: 8rem;
+background-color: #374151;
+border-radius: 0.75rem;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+
+.footer {
+background-color: #111827;
+padding: 1rem;
+border-radius: 0.75rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.footer-button {
+font-weight: 600;
+color: white;
+padding: 0.5rem 1rem;
+border-radius: 0.75rem;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+transition: background-color 0.2s;
+}
+
+.footer-button.refresh {
+background-color: #4b5563;
+}
+
+.footer-button.refresh:hover {
+background-color: #6b7280;
+}
+
+.footer-button.play {
+background-color: #10b981;
+}
+
+.footer-button.play:hover {
+background-color: #059669;
+}
+
+.toast {
+position: fixed;
+top: 1rem;
+left: 50%;
+transform: translateX(-50%);
+background: linear-gradient(to right, #3b82f6, #8b5cf6);
+color: white;
+padding: 1rem 2rem;
+border-radius: 0.75rem;
+box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+display: flex;
+align-items: center;
+gap: 0.75rem;
+opacity: 0;
+transition: all 0.5s ease;
+z-index: 50;
+}
+
+.toast-show {
+animation: slideDown 3s ease-in-out forwards;
+}
+
+@keyframes slideDown {
+0% {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+}
+10% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+90% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+100% {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+}
+}
+
+.card-button.disabled {
+background-color: #4b5563;
+cursor: not-allowed;
+opacity: 0.7;
+}
+
+.card-button.selected {
+background-color: #2563eb;
+}
