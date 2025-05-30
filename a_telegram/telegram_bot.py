@@ -22,7 +22,7 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 from telegram.error import NetworkError, Conflict
-from a_core.settings import settings
+from django.conf import settings
 from django.contrib.auth.models import User
 from a_telegram.models import TelegramUser
 from asgiref.sync import sync_to_async
