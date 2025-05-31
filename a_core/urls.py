@@ -32,8 +32,28 @@ if admin_url == "admin/":
     print("For example: ADMIN_URL=superuserport/")
     print("The default '/admin/' is disabled for security reasons.\n")
     sys.exit(1)  # Stop server startup to force correction
-   
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from telegram import Update
+from telegram.ext import Application
+import os
+import json
+from a_telegram.telegram_bot import setup_bot
+
+application = setup_bot()
+
+@csrf_exempt
+def telegram_webhook(request):
+    if request.method == "POST":
+        update = Update.de_json(json.loads(request.body), application.bot)
+        application.update_queue.put_nowait(update)
+        return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "not allowed"}, status=405)
+
+from django.urls import path
+
 urlpatterns = [
+    path(f'{os.getenv("TELEGRAM_BOT_TOKEN")}', telegram_webhook),
     path(admin_url, admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('', include('a_home.urls')),
